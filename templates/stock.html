@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery/jquery-1.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<body>
+{% raw %}
+<div id="app">
+    {{vue}}
+    <el-button @click="getStockData()">获取新股数据</el-button>
+    <el-button @click="addStockClick()">添加新股数据</el-button>
+    <el-button @click="getBondData()">获取新债数据</el-button>
+    <el-button @click="addBondClick()">添加新债数据</el-button>
+    <div :style="getStockStyle()">
+        <el-table
+                :data="stock_infos.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+                border
+                style="width: 100%">
+            <el-table-column
+                    prop="id"
+                    label="id"
+                   >
+            </el-table-column>
+            <el-table-column
+                    prop="code"
+                    label="股票代码"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="sub_code"
+                    label="申购代码">
+            </el-table-column>
+            <el-table-column
+                    prop="name"
+                    label="名称">
+            </el-table-column>
+        <el-table-column
+                    prop="ipo_date"
+                    label="上网发行日期">
+            </el-table-column>
+        <el-table-column
+                    prop="issue_date"
+                    label="上市日期"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="amount"
+                    label="发行总量（万股）"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="market_amount"
+                    label="上网发行总量（万股）">
+            </el-table-column>
+            <el-table-column
+                    prop="price"
+                    label="发行价格">
+            </el-table-column>
+        <el-table-column
+                    prop="pe"
+                    label="市盈率">
+            </el-table-column>
+        <el-table-column
+                    prop="limit_amount"
+                    label="个人申购上限（万股）"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="funds"
+                    label="募集资金（亿元）"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="ballot"
+                    label="中签率">
+            </el-table-column>
+            <el-table-column
+                    prop="platform"
+                    label="平台(1:东方财富 2:同花顺)">
+            </el-table-column>
+        <el-table-column
+                    prop="create_time"
+                    label="插入时间">
+            </el-table-column>
+
+
+            <el-table-column label="操作" width="180">
+                <template slot-scope="scope">
+                    <el-button type="primary" @click="getCurrentStock(scope.row)"  size="mini">编辑</el-button>
+                    <el-button type="danger" size="mini" @click="deleteStock(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="block" style="margin-top:15px;" >
+            <el-pagination align='center' @size-change="handleSizeChange" @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[1,5,10,20]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="stock_infos.length">
+            </el-pagination>
+        </div>
+    </div>
+    <div :style="getBondStyle()">
+        <el-table
+                :data="bond_infos.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+                border
+                style="width: 100%">
+            <el-table-column
+                    prop="id"
+                    label="id"
+                   >
+            </el-table-column>
+            <el-table-column
+                    prop="code"
+                    label="债券代码（全）"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="sub_code"
+                    label="债券代码">
+            </el-table-column>
+            <el-table-column
+                    prop="correcode"
+                    label="申购代码">
+            </el-table-column>
+            <el-table-column
+                        prop="name"
+                        label="债券名称">
+                </el-table-column>
+            <el-table-column
+                    prop="correcode_name"
+                    label="申购名称"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="日期"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="pricenew"
+                    label="债现价">
+            </el-table-column>
+            <el-table-column
+                    prop="transfer_price"
+                    label="转股价">
+            </el-table-column>
+            <el-table-column
+                        prop="platform"
+                        label="平台 1东方财富 2同花顺">
+                </el-table-column>
+            <el-table-column
+                    prop="create_time"
+                    label="创建时间"
+                    >
+            </el-table-column>
+
+            <el-table-column label="操作" width="180">
+                <template slot-scope="scope">
+                    <el-button type="primary" @click="getCurrentBond(scope.row)"  size="mini" >编辑</el-button>
+                    <el-button type="danger" size="mini" @click="deleteBond(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="block" style="margin-top:15px;" >
+            <el-pagination align='center' @size-change="handleSizeChange" @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[1,5,10,20]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="bond_infos.length">
+            </el-pagination>
+        </div>
+    </div>
+
+
+        <el-dialog title="修改新股数据" :visible.sync="editBox" width="50%" :before-close="handleClose">
+                <el-form ref="form" label-width="100px" v-model="stock">
+                    <el-form-item label="股票代码:">
+                        <el-input placeholder="请输入股票代码" maxlength="50" v-model = "stock.code"></el-input>
+                    </el-form-item>
+                    <el-form-item label="申购代码:">
+                        <el-input placeholder="请输入申购代码" maxlength="50" v-model = "stock.sub_code"></el-input>
+                    </el-form-item>
+                    <el-form-item label="名称:">
+                        <el-input placeholder="请输入名称" maxlength="50" v-model = "stock.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="上网发行日期:">
+                        <el-input placeholder="请输入股票上网发行日期" maxlength="50" v-model = "stock.ipo_date"></el-input>
+                    </el-form-item>
+                    <el-form-item label="上市日期:">
+                        <el-input placeholder="请输入上市日期" maxlength="50" v-model = "stock.issue_date"></el-input>
+                    </el-form-item>
+                    <el-form-item label="发行总量（万股）:">
+                        <el-input placeholder="请输入发行总量（万股）" maxlength="50" v-model = "stock.amount"></el-input>
+                    </el-form-item>
+                    <el-form-item label="上网发行总量（万股）:">
+                        <el-input placeholder="请输入上网发行总量（万股）" maxlength="50" v-model = "stock.market_amount"></el-input>
+                    </el-form-item>
+                    <el-form-item label="发行价格:">
+                        <el-input placeholder="请输入发行价格" maxlength="50" v-model = "stock.price"></el-input>
+                    </el-form-item>
+                    <el-form-item label="市盈率:">
+                        <el-input placeholder="请输入市盈率" maxlength="50" v-model = "stock.pe"></el-input>
+                    </el-form-item>
+                    <el-form-item label="个人申购上限（万股）:">
+                        <el-input placeholder="请输入股票个人申购上限（万股）" maxlength="50" v-model = "stock.limit_amount"></el-input>
+                    </el-form-item>
+                    <el-form-item label="募集资金（亿元）:">
+                        <el-input placeholder="请输入募集资金（亿元）" maxlength="50" v-model = "stock.funds"></el-input>
+                    </el-form-item>
+                    <el-form-item label="中签率:">
+                        <el-input placeholder="请输入中签率" maxlength="50" v-model = "stock.ballot"></el-input>
+                    </el-form-item>
+                    <el-form-item label="平台:">
+                        <el-input placeholder="请输入平台" maxlength="50" v-model = "stock.platform"></el-input>
+                    </el-form-item>
+                    <el-form-item label="插入时间:">
+                        <el-input placeholder="请输入插入时间" maxlength="50" v-model = "stock.create_time"></el-input>
+                    </el-form-item>
+                    </el-form-item>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                    <el-button type="primary" @click="editCurrentStock">确 定</el-button>
+                    <el-button type="primary" @click="closeBox">取 消</el-button>
+                </span>
+            </el-dialog>
+
+        <el-dialog title="添加新股数据" :visible.sync="addBox" width="50%" :before-close="handleClose">
+            <el-form ref="form" label-width="100px" v-model="addStockData">
+                <el-form-item label="股票代码:">
+                    <el-input placeholder="请输入股票代码" maxlength="50" v-model = "addStockData.code"></el-input>
+                </el-form-item>
+                <el-form-item label="申购代码:">
+                    <el-input placeholder="请输入申购代码" maxlength="50" v-model = "addStockData.sub_code"></el-input>
+                </el-form-item>
+                <el-form-item label="名称:">
+                    <el-input placeholder="请输入名称" maxlength="50" v-model = "addStockData.name"></el-input>
+                </el-form-item>
+                <el-form-item label="上网发行日期:">
+                    <el-input placeholder="请输入上网发行日期" maxlength="50" v-model = "addStockData.ipo_date"></el-input>
+                </el-form-item>
+                <el-form-item label="上市日期:">
+                    <el-input placeholder="请输入上市日期" maxlength="50" v-model = "addStockData.issue_date"></el-input>
+                </el-form-item>
+                <el-form-item label="发行总量（万股）:">
+                    <el-input placeholder="请输入发行总量（万股）" maxlength="50" v-model = "addStockData.amount"></el-input>
+                </el-form-item>
+                <el-form-item label="上网发行总量（万股）:">
+                    <el-input placeholder="请输入上网发行总量（万股）" maxlength="50" v-model = "addStockData.market_amount"></el-input>
+                </el-form-item>
+                <el-form-item label="发行价格:">
+                    <el-input placeholder="请输入发行价格" maxlength="50" v-model = "addStockData.price"></el-input>
+                </el-form-item>
+                <el-form-item label="市盈率:">
+                    <el-input placeholder="请输入市盈率" maxlength="50" v-model = "addStockData.pe"></el-input>
+                </el-form-item>
+                <el-form-item label="个人申购上限（万股）:">
+                    <el-input placeholder="请输入个人申购上限（万股）" maxlength="50" v-model = "addStockData.limit_amount"></el-input>
+                </el-form-item>
+                <el-form-item label="募集资金（亿元）:">
+                    <el-input placeholder="请输入募集资金（亿元）" maxlength="50" v-model = "addStockData.funds"></el-input>
+                </el-form-item>
+                <el-form-item label="中签率:">
+                    <el-input placeholder="请输入中签率" maxlength="50" v-model = "addStockData.ballot"></el-input>
+                </el-form-item>
+                <el-form-item label="平台:">
+                    <el-input placeholder="请输入平台" maxlength="50" v-model = "addStockData.platform"></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="addStock">确 定</el-button>
+                <el-button type="primary" @click="closeBox">取 消</el-button>
+            </span>
+        </el-dialog>
+
+        <el-dialog title="修改新债数据" :visible.sync="editBondBox" width="50%" :before-close="handleClose">
+                <el-form ref="form" label-width="100px" v-model="bond">
+                    <el-form-item label="债券代码（全）:">
+                        <el-input placeholder="请输入债券代码（全）" maxlength="50" v-model = "bond.code"></el-input>
+                    </el-form-item>
+                    <el-form-item label="债券代码:">
+                        <el-input placeholder="请输入债券代码" maxlength="50" v-model = "bond.sub_code"></el-input>
+                    </el-form-item>
+                    <el-form-item label="申购代码:">
+                        <el-input placeholder="请输入申购代码" maxlength="50" v-model = "bond.correcode"></el-input>
+                    </el-form-item>
+                    <el-form-item label="债券名称:">
+                        <el-input placeholder="请输入债券名称" maxlength="50" v-model = "bond.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="申购名称:">
+                        <el-input placeholder="请输入申购名称" maxlength="50" v-model = "bond.correcode_name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="日期:">
+                        <el-input placeholder="请输入日期）" maxlength="50" v-model = "bond.date"></el-input>
+                    </el-form-item>
+                    <el-form-item label="债现价:">
+                        <el-input placeholder="请输入债现价" maxlength="50" v-model = "bond.pricenew"></el-input>
+                    </el-form-item>
+                    <el-form-item label="转股价:">
+                        <el-input placeholder="请输入转股价" maxlength="50" v-model = "bond.transfer_price"></el-input>
+                    </el-form-item>
+                    <el-form-item label="平台 1东方财富 2同花顺:">
+                        <el-input placeholder="请输入平台" maxlength="50" v-model = "bond.platform"></el-input>
+                    </el-form-item>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                    <el-button type="primary" @click="editCurrentBond">确 定</el-button>
+                    <el-button type="primary" @click="closeBox">取 消</el-button>
+                </span>
+            </el-dialog>
+
+        <el-dialog title="添加新债数据" :visible.sync="addBondBox" width="50%" :before-close="handleClose">
+            <el-form ref="form" label-width="100px" v-model="addBondData">
+                <el-form-item label="债券代码（全）:">
+                    <el-input placeholder="请输入债券代码（全）" maxlength="50" v-model = "addBondData.code"></el-input>
+                </el-form-item>
+                <el-form-item label="债券代码:">
+                    <el-input placeholder="请输入债券代码" maxlength="50" v-model = "addBondData.sub_code"></el-input>
+                </el-form-item>
+                <el-form-item label="申购代码:">
+                    <el-input placeholder="请输入申购代码" maxlength="50" v-model = "addBondData.correcode"></el-input>
+                </el-form-item>
+                <el-form-item label="债券名称:">
+                    <el-input placeholder="请输入债券名称" maxlength="50" v-model = "addBondData.name"></el-input>
+                </el-form-item>
+                <el-form-item label="申购名称:">
+                    <el-input placeholder="请输入申购名称" maxlength="50" v-model = "addBondData.correcode_name"></el-input>
+                </el-form-item>
+
+                <el-form-item label="日期:">
+                    <el-input placeholder="请输入日期(20220101)" maxlength="50" v-model = "addBondData.date"></el-input>
+                </el-form-item>
+                <el-form-item label="债现价:">
+                    <el-input placeholder="请输入债现价" maxlength="50" v-model = "addBondData.pricenew"></el-input>
+                </el-form-item>
+                <el-form-item label="转股价:">
+                    <el-input placeholder="请输入转股价" maxlength="50" v-model = "addBondData.transfer_price"></el-input>
+                </el-form-item>
+                <el-form-item label="平台 1东方财富 2同花顺:">
+                    <el-input placeholder="请输入平台" maxlength="50" v-model = "addBondData.platform"></el-input>
+                </el-form-item>
+
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="addBond">确 定</el-button>
+                <el-button type="primary" @click="closeBox">取 消</el-button>
+            </span>
+        </el-dialog>
+
+</div>
+{% endraw %}
+    <script>
+
+        const app = new Vue({
+            el: '#app',
+            data:{//定义数据
+                stock_infos:[],
+                bond_infos:[],
+                stock:{},
+                bond:{},
+                stockShow:false,
+                bondShow:false,
+                addBox : false,
+                editBox: false,
+                editBondBox:false,
+                addBondBox:false,
+                pageSize:5,
+                currentPage:1,
+                addStockData:{
+                    code:'',
+                    sub_code:'',
+                    name:'',
+                    ipo_date:'',
+                    issue_date:'',
+                    amount:"",
+                    market_amount:'',
+                    price:'',
+                    pe:'',
+                    limit_amount:'',
+                    funds:'',
+                    ballot:'',
+                    platform:''
+                },
+                addBondData:{
+                    code:'',
+                    sub_code:'',
+                    correcode:'',
+                    name:'',
+                    correcode_name:'',
+                    date:'',
+                    pricenew:'',
+                    transfer_price:'',
+                    platform:''
+                }
+            },
+            methods:{
+                // 删除新股
+                deleteStock:function (row) {
+                    let id = row.id;
+                    for (var i=0;i<this.stock_infos.length;i++){
+                        if (this.stock_infos[i].id == id) {
+                            this.stock_infos.splice(i, 1);
+                            break;
+                        }
+                    }
+                    this.deleteStockRequest(id);
+                },
+                // 删除新债
+                deleteBond:function (row) {
+                    console.log(row);
+                    let id = row.id;
+                    for (var i=0;i<this.bond_infos.length;i++){
+                        if (this.bond_infos[i].id == id) {
+                            this.bond_infos.splice(i, 1);
+                            break;
+                        }
+                    }
+                    this.deleteBondRequest(id);
+                },
+                // 删除新股请求
+                deleteStockRequest:function (id) {
+                    $.ajax({
+                            //url
+                           url:'/delete_stock?type=stock&id='+id ,
+                            //请求类型：
+                            type:'GET',
+                            //响应体结果：
+                            dataType:'json',
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 删除新债请求
+                deleteBondRequest:function (id) {
+                    $.ajax({
+                            //url
+                           url:'/delete_stock?type=bond&id='+id ,
+                            //请求类型：
+                            type:'GET',
+                            //响应体结果：
+                            dataType:'json',
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 编辑新股
+                getCurrentStock:function (row) {
+                    this.editBox = true;
+                    this.stock = row;
+                },
+                editCurrentStock:function () {
+                    this.editBox = false;
+                    console.log(this.stock);
+                    this.editStockRequest(this.stock)
+                },
+                // 编辑新债
+                getCurrentBond:function (row) {
+                    this.editBondBox = true;
+                    this.bond = row;
+                },
+                editCurrentBond:function () {
+                    this.editBondBox = false;
+                    console.log(this.bond);
+                    this.editBondRequest(this.bond);
+                },
+                // 添加新股数据
+                addStockClick:function () {
+                  this.addBox = true;
+                },
+                addStock:function () {
+                    console.log(this.addStockData)
+                    this.addStockRequest(this.addStockData);
+                    this.addBox = false;
+                    this.addStockData = {
+                    code:'',
+                    sub_code:'',
+                    name:'',
+                    ipo_date:'',
+                    issue_date:'',
+                    amount:"",
+                    market_amount:'',
+                    price:'',
+                    pe:'',
+                    limit_amount:'',
+                    funds:'',
+                    ballot:'',
+                    platform:''
+                };
+                    this.$message({showClose: true, message: "添加成功", type: 'success'});
+                },
+                // 添加新债
+                addBondClick:function () {
+                    this.addBondBox = true
+                },
+                addBond:function () {
+                    console.log(this.addBondData);
+                    this.addBondRequest(this.addBondData)
+                    this.addBondBox = false;
+                    this.addStockData = {
+                    code:'',
+                    sub_code:'',
+                    correcode:'',
+                    name:'',
+                    correcode_name:'',
+                    date:'',
+                    pricenew:'',
+                    transfer_price:'',
+                    platform:''
+                };
+                    this.$message({showClose: true, message: "添加成功", type: 'success'});
+                },
+                // 编辑新股请求
+                editStockRequest:function (row) {
+                    $.ajax({
+                            //url
+                           url:'/edit_stock' ,
+                            //请求类型：
+                            type:'POST',
+                            //响应体结果：
+                            dataType:'json',
+                            data:row,
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                                result = data;
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 编辑新债请求
+                editBondRequest:function (row) {
+                    $.ajax({
+                            //url
+                           url:'/edit_bond' ,
+                            //请求类型：
+                            type:'POST',
+                            //响应体结果：
+                            dataType:'json',
+                            data:row,
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                                result = data;
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 添加新股数据请求
+                addStockRequest:function (row) {
+                    $.ajax({
+                            //url
+                           url:'/add_stock' ,
+                            //请求类型：
+                            type:'POST',
+                            //响应体结果：
+                            dataType:'json',
+                            data:row,
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 添加新债数据请求
+                addBondRequest:function (row) {
+                    $.ajax({
+                            //url
+                           url:'/add_bond' ,
+                            //请求类型：
+                            type:'POST',
+                            //响应体结果：
+                            dataType:'json',
+                            data:row,
+                            //成功回调：
+                            success:function(data){
+                                console.log(data);
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                },
+                // 获得新股数据
+                getStockData:function () {
+                    this.bondShow = false;
+                    this.stockShow = true;
+                    var result;
+                    $.ajax({
+                            //url
+                           url:'/get_all_data?data=stock' ,
+                            //请求类型：
+                            type:'GET',
+                            //响应体结果：
+                            dataType:'json',
+                            //成功回调：
+                            success:function(data){
+                                result = data.data;
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            async:false,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                    console.log(result);
+                    this.stock_infos = result[0];
+                },
+                // 获取新债数据
+                getBondData:function () {
+                    this.stockShow = false;
+                    this.bondShow = true;
+                    var result;
+                    $.ajax({
+                            //url
+                           url:'/get_all_data?data=bond' ,
+                            //请求类型：
+                            type:'GET',
+                            //响应体结果：
+                            dataType:'json',
+                            //成功回调：
+                            success:function(data){
+                                result = data.data;
+                            },
+                            //超时时间：
+                            timeout:2000,
+                            async:false,
+                            //失败回调：
+                            error:function(){
+                                console.log('出错');
+                            }
+                        });
+                    console.log(result);
+                    this.bond_infos = result[0];
+                },
+                // 取消弹窗
+                closeBox:function () {
+                    this.editBox = false;
+                    this.addBox = false;
+                    this.editBondBox = false;
+                    this.addBondBox = false;
+                },
+                // 下一页
+                current_change:function(currentPage){
+                    this.currentPage = currentPage;
+                },
+                // 控制现实隐藏:
+                getStockStyle:function () {
+                  if(this.stockShow == false){
+                      return {display: "none"}
+                  }else {
+                      return {}
+                  }
+                },
+                getBondStyle:function () {
+                    if(this.bondShow == false){
+                      return {display: "none"}
+                      }else {
+                          return {}
+                      }
+                },
+                handleSizeChange(val) {
+                    this.currentPage = 1;
+                    this.pageSize = val;
+                },
+                //当前页改变时触发 跳转其他页
+                handleCurrentChange(val) {
+                    this.currentPage = val;
+                },
+                handleClose(done) {
+                done();
+                },
+
+            }
+        })
+
+    </script>
+</body>
+</html>
